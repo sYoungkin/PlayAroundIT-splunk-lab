@@ -95,6 +95,7 @@ chmod 644 /etc/profile.d/splunk-alias.sh
 VM_IP=$(hostname -I | awk '{print $1}')
 
 log "Installation complete."
+log "Hostname: $(hostname)"
 log "Splunk Web should be available at: http://${VM_IP}:8000"
 log "Username: ${ADMIN_USER}"
 log "Password: ${ADMIN_PWD}"
