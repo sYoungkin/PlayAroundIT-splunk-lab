@@ -98,15 +98,46 @@ Provisioning may take several minutes during the first run.
 
 ---
 
-# Connect to the Machine
+# Access Splunk Web
 
-After provisioning completes, SSH into the VM:
+At the end of the provisioning process, the installation script automatically prints the hostname, IP address, and Splunk Web URL for the VM.
 
-```bash
-vagrant ssh test
+Example:
+
+```text
+[INFO] Installation complete.
+[INFO] Hostname: splunk-test
+[INFO] Splunk Web: http://192.168.188.128:8000
+[INFO] Username: admin
+[INFO] Password: ChangeMe123!
 ```
 
-You are now connected as the `vagrant` user.
+The VM receives its IP address dynamically through the VMware DHCP network. The installation script automatically detects the assigned IP address and prints the correct Splunk Web URL during provisioning.
+
+Open the displayed URL in a browser:
+
+```text
+http://<IP_ADDRESS>:8000
+```
+
+Example:
+
+```text
+http://192.168.188.128:8000
+```
+
+---
+
+# Login Credentials
+
+Login with:
+
+| Field | Value |
+|---|---|
+| Username | admin |
+| Password | Defined in the Vagrantfile environment variable |
+
+The password is passed into the installation script during provisioning through the Vagrant shell provisioner environment configuration.
 
 ---
 
@@ -144,53 +175,6 @@ splunk status
 ```
 
 Because the alias is configured through `/etc/profile.d/`, it is available system-wide for all users.
-
----
-
-# Determine the VM IP Address
-
-The VM receives its IP address dynamically through the VMware DHCP network.
-
-Display the network interfaces:
-
-```bash
-ip a
-```
-
-Look for the assigned IPv4 address, for example:
-
-```text
-192.168.x.x
-```
-
----
-
-# Access Splunk Web
-
-Open a browser and navigate to:
-
-```text
-http://<IP_ADDRESS>:8000
-```
-
-Example:
-
-```text
-http://192.168.123.128:8000
-```
-
----
-
-# Login Credentials
-
-Login with:
-
-| Field | Value |
-|---|---|
-| Username | admin |
-| Password | Defined in the Vagrantfile environment variable |
-
-The password is passed into the installation script during provisioning through the Vagrant shell provisioner environment configuration.
 
 ---
 
