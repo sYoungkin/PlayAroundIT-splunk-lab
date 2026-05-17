@@ -47,7 +47,7 @@ fi
 
 log "Downloading Splunk Enterprise ${SPLUNK_VERSION}..."
 if [[ ! -f "/opt/${SPLUNK_PACKAGE}" ]]; then
-  wget -O "/opt/${SPLUNK_PACKAGE}" "$SPLUNK_URL"
+  wget -q --show-progress --progress=bar:force:noscroll -O "/opt/${SPLUNK_PACKAGE}" "$SPLUNK_URL"
 else
   log "Package already exists, skipping download."
 fi
