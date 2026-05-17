@@ -11,7 +11,7 @@ The purpose of this environment is to:
 - verify that our Splunk installation script functions correctly
 - create a simple disposable Splunk lab for experimentation
 
-This environment provisions a single Ubuntu 22.04 virtual machine using Vagrant and VMware Desktop and automatically installs Splunk Enterprise through a shell provisioning script.
+This environment provisions a single Ubuntu 22.04 virtual machine using Vagrant and automatically installs Splunk Enterprise through a shell provisioning script.
 
 ---
 
@@ -22,9 +22,37 @@ The environment contains:
 | Component | Description |
 |---|---|
 | Ubuntu 22.04 VM | Base Linux operating system |
-| VMware Desktop | Hypervisor provider |
+| VMware Desktop / VMware Fusion | Hypervisor provider |
 | Vagrant | Infrastructure provisioning/orchestration |
 | Splunk Enterprise | Automatically installed during provisioning |
+| auditd | Linux audit subsystem used for security event generation |
+
+---
+
+# Hypervisor / Provider Notes
+
+This lab was primarily developed and tested using the VMware Desktop provider:
+
+- VMware Workstation (Windows)
+- VMware Fusion (macOS)
+
+However, Vagrant supports multiple providers. In principle, any supported Vagrant provider may be used, including:
+
+- VMware Desktop
+- VirtualBox
+- Hyper-V
+- libvirt
+- Parallels
+
+Users may choose whichever provider they are most comfortable with.
+
+## VMware Workstation Version Recommendation
+
+On Windows systems, VMware Workstation 17 is currently recommended.
+
+During testing, VMware Workstation 24 showed issues with the installation and operation of the Vagrant VMware utility.
+
+If problems occur with VMware Workstation 24, consider using VMware Workstation 17 instead.
 
 ---
 
@@ -42,7 +70,7 @@ Verify Vagrant is installed:
 vagrant --version
 ```
 
-Verify VMware plugin:
+Verify installed Vagrant plugins:
 
 ```bash
 vagrant plugin list
@@ -62,7 +90,7 @@ cd test
 
 # Check Environment Status
 
-Before provisioning, we can inspect the current Vagrant state:
+Before provisioning, inspect the current Vagrant state:
 
 ```bash
 vagrant status
@@ -178,6 +206,224 @@ Because the alias is configured through `/etc/profile.d/`, it is available syste
 
 ---
 
+# auditd Demonstration and Linux Audit Log Onboarding
+
+This standalone environment is also used to demonstrate onboarding Linux audit logs into Splunk.
+
+The Linux audit subsystem (`auditd`) generates detailed security-relevant operating system events, including:
+
+- file access
+- permission changes
+- authentication activity
+- process execution
+- privilege escalation
+- system configuration changes
+
+These events are written into:
+
+```text
+/var/log/audit/audit.log
+```
+
+Because audit logs are security-sensitive, they are typically only accessible by `root`.
+
+Since Splunk runs as the dedicated Linux user `splunk`, we must grant controlled read access to the audit logs.
+
+---
+
+# Installing auditd
+
+Install the audit subsystem:
+
+```bash
+apt-get update
+apt-get install -y auditd audispd-plugins
+```
+
+Verify auditd is running:
+
+```bash
+systemctl status auditd
+```
+
+---
+
+# Inspect Existing Audit Log Permissions
+
+Inspect the audit log:
+
+```bash
+ls -l /var/log/audit/audit.log
+```
+
+Inspect existing ACLs:
+
+```bash
+getfacl /var/log/audit/audit.log
+```
+
+---
+
+# Production-Style Audit Log Access Model
+
+A common initial approach is using ACLs (`setfacl`) directly on the audit log file.
+
+However, this often creates problems during log rotation because newly rotated log files may lose their ACL entries.
+
+Instead, this lab demonstrates a cleaner and more production-oriented solution using:
+
+- a dedicated Linux group
+- auditd log group assignment
+- controlled group membership
+
+This avoids repeatedly managing ACLs on rotating audit log files.
+
+---
+
+# Create Dedicated Audit Reader Group
+
+Create a dedicated group for systems allowed to read audit logs:
+
+```bash
+groupadd --system auditreaders
+```
+
+Add the Splunk Linux user to the group:
+
+```bash
+usermod -aG auditreaders splunk
+```
+
+Verify group membership:
+
+```bash
+sudo -u splunk groups
+```
+
+---
+
+# Configure auditd Log Group
+
+Edit the auditd configuration:
+
+```bash
+vim /etc/audit/auditd.conf
+```
+
+Locate the following parameter:
+
+```ini
+log_group =
+```
+
+Set it to:
+
+```ini
+log_group = auditreaders
+```
+
+This instructs auditd to assign the audit log group ownership to `auditreaders`.
+
+---
+
+# Restart Services
+
+Restart auditd:
+
+```bash
+systemctl restart auditd
+```
+
+Restart Splunk:
+
+```bash
+systemctl restart Splunkd.service
+```
+
+---
+
+# Verify Permissions
+
+Inspect the audit directory:
+
+```bash
+ls -ld /var/log/audit
+```
+
+Inspect the audit log:
+
+```bash
+ls -l /var/log/audit/audit.log
+```
+
+The audit log should now show group ownership similar to:
+
+```text
+root auditreaders
+```
+
+---
+
+# Verify Splunk User Access
+
+Verify the Splunk Linux user can read the audit log:
+
+```bash
+sudo -u splunk head /var/log/audit/audit.log
+```
+
+If the file contents are displayed successfully, Splunk now has persistent read access to the Linux audit logs.
+
+---
+
+# Splunk Add-on for Unix and Linux
+
+To correctly parse and normalize Linux audit events, install:
+
+```text
+Splunk Add-on for Unix and Linux
+```
+
+through the Splunk Web UI.
+
+The add-on provides:
+- Linux sourcetypes
+- field extractions
+- CIM mappings
+- Linux data normalization
+
+---
+
+# Adding the Audit Log in Splunk Web
+
+Inside Splunk Web:
+
+```text
+Settings → Add Data → Monitor
+```
+
+Select:
+
+```text
+Files & Directories
+```
+
+Monitor:
+
+```text
+/var/log/audit/audit.log
+```
+
+Recommended sourcetype:
+
+```text
+linux:audit
+```
+
+At this point, Linux audit events should begin appearing inside Splunk.
+
+---
+
 # Destroying the Environment
 
 Because the environment is fully automated, it can easily be destroyed and recreated.
@@ -212,4 +458,4 @@ This standalone environment serves as a preparation step before building more ad
 - TLS-enabled environments
 - monitoring and observability tooling
 
-The goal is first to understand the fundamentals of automated infrastructure provisioning and Splunk installation before introducing additional architectural complexity.
+The goal is first to understand the fundamentals of automated infrastructure provisioning, Linux telemetry onboarding, and Splunk installation before introducing additional architectural complexity.
