@@ -80,10 +80,10 @@ vagrant plugin list
 
 # Starting the Environment
 
-Navigate into the test environment folder:
+Navigate into the splunk_standalone_auditd environment folder:
 
 ```bash
-cd test
+cd splunk_standalone_auditd
 ```
 
 ---
@@ -99,7 +99,7 @@ vagrant status
 Initially, the machine should show:
 
 ```text
-test    not created
+standalone    not created
 ```
 
 ---
@@ -378,7 +378,7 @@ If the file contents are displayed successfully, Splunk now has persistent read 
 
 # Splunk Add-on for Unix and Linux
 
-To correctly parse and normalize Linux audit events, install:
+To correctly parse and normalize Linux audit events, install (provided in this repo):
 
 ```text
 Splunk Add-on for Unix and Linux
@@ -414,10 +414,10 @@ Monitor:
 /var/log/audit/audit.log
 ```
 
-Recommended sourcetype:
+Recommended sourcetype (for the file monitor input - later we will use the scripted input and the corresponding auditd sourcetype):
 
 ```text
-linux:audit
+linux_audit
 ```
 
 At this point, Linux audit events should begin appearing inside Splunk.
@@ -449,7 +449,7 @@ This allows rapid experimentation without worrying about permanently damaging th
 This standalone environment serves as a preparation step before building more advanced Splunk architectures, including:
 
 - distributed search
-- deployment servers
+- Agent management (formerly known as deployment servers)
 - heavy forwarders
 - indexer clustering
 - search head clustering
@@ -457,5 +457,8 @@ This standalone environment serves as a preparation step before building more ad
 - Cribl integration
 - TLS-enabled environments
 - monitoring and observability tooling
+- LDAP integration
+- Load-balancing
+- much more!
 
-The goal is first to understand the fundamentals of automated infrastructure provisioning, Linux telemetry onboarding, and Splunk installation before introducing additional architectural complexity.
+The goal is first to understand the fundamentals of automated infrastructure provisioning, Linux audit onboarding, and Splunk installation before introducing additional architectural complexity.
