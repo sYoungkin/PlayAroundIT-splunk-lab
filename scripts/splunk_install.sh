@@ -35,7 +35,7 @@ require_root
 
 log "Updating packages and installing dependencies..."
 apt-get update -y
-apt-get install -y wget ca-certificates tar
+apt-get install -y wget ca-certificates tar neofetch
 
 log "Setting timezone to ${TIMEZONE}..."
 timedatectl set-timezone "$TIMEZONE"
@@ -94,8 +94,15 @@ chmod 644 /etc/profile.d/splunk-alias.sh
 
 VM_IP=$(hostname -I | awk '{print $1}')
 
-log "Installation complete."
-log "Hostname: $(hostname)"
-log "Splunk Web should be available at: http://${VM_IP}:8000"
+echo ""
+echo "========================================="
+echo " Splunk Lab Environment Ready"
+echo "========================================="
+echo ""
+
+neofetch
+
+echo ""
+log "Splunk Web: http://${VM_IP}:8000"
 log "Username: ${ADMIN_USER}"
 log "Password: ${ADMIN_PWD}"
